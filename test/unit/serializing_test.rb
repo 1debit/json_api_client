@@ -121,6 +121,7 @@ class SerializingTest < MiniTest::Test
     expected = {
       "type" => "articles",
       "id" => "1",
+      "relationships"=>{"author"=>{"data"=>{"type"=>"people", "id"=>"9"}}},
       "attributes" => {}
     }
     assert_equal expected, article.as_json_api

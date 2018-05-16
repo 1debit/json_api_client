@@ -52,5 +52,15 @@ module JsonApiClient
       end
     end
 
+    class RecordNotSaved < ServerError
+      attr_reader :record
+
+      def initialize(message = nil, record = nil)
+        @record = record
+      end
+      def message
+        "Record not saved"
+      end
+    end
   end
 end

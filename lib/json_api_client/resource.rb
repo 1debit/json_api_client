@@ -139,6 +139,12 @@ module JsonApiClient
         end
       end
 
+      def create!(attributes = {})
+        new(attributes).tap do |resource|
+          raise(Errors::RecordNotSaved.new("Failed to save the record", resource)) unless resource.save
+        end
+      end
+
       # Within the given block, add these headers to all requests made by
       # the resource class
       #
@@ -304,6 +310,7 @@ module JsonApiClient
     #
     # @param params [Hash] Attributes, links, and relationships
     def initialize(params = {})
+      params = params.with_indifferent_access
       @persisted = nil
       self.links = self.class.linker.new(params.delete("links") || {})
       self.relationships = self.class.relationship_linker.new(self.class, params.delete("relationships") || {})
@@ -329,12 +336,21 @@ module JsonApiClient
       save
     end
 
+    def update_attributes!(attrs = {})
+      self.attributes = attrs
+      save ? true : raise(Errors::RecordNotSaved.new("Failed to update the record", self))
+    end
+
     # Alias to update_attributes
     #
     # @param attrs [Hash] Attributes to update
     # @return [Boolean] Whether the update succeeded or not
     def update(attrs = {})
       update_attributes(attrs)
+    end
+
+    def update!(attrs = {})
+      update_attributes!(attrs)
     end
 
     # Mark the record as persisted
@@ -505,7 +521,7 @@ module JsonApiClient
     def fill_errors
       last_result_set.errors.each do |error|
         key = self.class.key_formatter.unformat(error.error_key)
-        errors.add(key, error.error_msg)
+        errors.add(key, error.detail)
       end
     end
   end

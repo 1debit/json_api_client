@@ -144,10 +144,12 @@ class SerializingTest < MiniTest::Test
 
     articles = Article.all
     article = articles.first
+    article.author = Person.new(id: '9')
 
     expected = {
       "type" => "articles",
       "id" => "1",
+      "relationships"=>{"author"=>{"data"=>{"type"=>"people", "id"=>"9"}}},
       "attributes" => {}
     }
     assert_equal expected, article.as_json_api

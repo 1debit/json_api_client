@@ -32,6 +32,18 @@ module JsonApiClient
         attrs[:detail]
       end
 
+      def full_message
+        attrs[:full_message]
+      end
+
+      def attr_key
+        attrs[:attr_key]
+      end
+
+      def attr_details
+        attrs[:attr_details]
+      end
+
       def source_parameter
         source[:parameter]
       end

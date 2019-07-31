@@ -7,10 +7,12 @@ module JsonApiClient
       site = options.fetch(:site)
       connection_options = options.slice(:proxy, :ssl, :request, :headers, :params)
       adapter_options = Array(options.fetch(:adapter, Faraday.default_adapter))
+      status_middleware_options = {}
+      status_middleware_options[:custom_handlers] = options[:status_handlers] if options[:status_handlers].present?
       @faraday = Faraday.new(site, connection_options) do |builder|
         builder.request :json
         builder.use Middleware::JsonRequest
-        builder.use Middleware::Status
+        builder.use Middleware::Status, status_middleware_options
         builder.use Middleware::ParseJson
         builder.adapter(*adapter_options)
       end
@@ -28,8 +30,10 @@ module JsonApiClient
       faraday.builder.delete(middleware)
     end
 
-    def run(request_method, path, params = {}, headers = {})
-      faraday.send(request_method, path, params, headers)
+    def run(request_method, path, params: nil, headers: {}, body: nil)
+      faraday.run_request(request_method, path, body, headers) do |request|
+        request.params.update(params) if params
+      end
     end
 
   end

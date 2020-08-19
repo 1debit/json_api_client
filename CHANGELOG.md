@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v2.0.0
+- Adding `bigdecimal ~> 2.0.0` as a gem dependency and updating BigDecimal constructors
+
 ## v1.5.3
 
 - [#266](https://github.com/chingor13/json_api_client/pull/266) - Fix default attributes being overridden

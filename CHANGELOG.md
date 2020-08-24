@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v2.0.1
+- relax bigdecimal version constraints
+
 ## v2.0.0
 - Adding `bigdecimal ~> 2.0.0` as a gem dependency and updating BigDecimal constructors
 

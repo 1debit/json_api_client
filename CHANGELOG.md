@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 1.17.1
+- [#370](https://github.com/JsonApiClient/json_api_client/pull/370) - bigdecimal 2 support
+
+## 1.17.0
+
+- [#364](https://github.com/JsonApiClient/json_api_client/pull/364) - Relax faraday and faraday middleware versions
+
+## 1.16.1
+
+- [#361](https://github.com/JsonApiClient/json_api_client/pull/361) - Call super from inherited method so that it will execute parent classes' implementations
+
+## 1.16.0
+
+- [#359](https://github.com/JsonApiClient/json_api_client/pull/359) - Support gzip content encoding
+
+## 1.15.0
+
+- [#346](https://github.com/JsonApiClient/json_api_client/pull/346) - add the option to have immutable resources
+- [#357](https://github.com/JsonApiClient/json_api_client/pull/357) - fix missing constant formatter
+
 ## 1.14.1
 
 - [#353](https://github.com/JsonApiClient/json_api_client/pull/353) - fix to support deserializing resources with relationships without those related resources being included in the response (issue [#352](https://github.com/JsonApiClient/json_api_client/issues/352)).

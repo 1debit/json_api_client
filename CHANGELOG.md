@@ -2,7 +2,7 @@
 
 Using a new major version can cause problems when the upstream moves to their v2.0
 
-A better way to handle this in a forked repository is:
+A better way to handle this is:
 
  - to not fork in the first place, but rather:
    - create PRs to contribute to the upstream repository

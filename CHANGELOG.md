@@ -1,5 +1,16 @@
 # Changelog
 
+Using a new major version can cause problems when the upstream moves to their v2.0
+
+A better way to handle this in a forked repository is:
+
+ - to not fork in the first place, but rather:
+   - create PRs to contribute to the upstream repository
+   - put modifications into an initializer until the upstream incorporates your PR
+ - if a forked repositiory is already in place:
+   - keep the master of the fork always in-sync with the upstream master
+   - keep any custom modifications on a private branch, e.g. chime, and use that branch in all your projects
+
 # Chime ChangeLog:
 
 ## v2.18.0
@@ -10,6 +21,8 @@
 
 ## v2.0.0
 - Adding `bigdecimal ~> 2.0.0` as a gem dependency and updating BigDecimal constructors
+
+-------
 
 # Upstream ChangeLog:
 

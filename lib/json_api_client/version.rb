@@ -1,3 +1,3 @@
 module JsonApiClient
-  VERSION = "2.0.1"
+  VERSION = "2.18.0"
 end

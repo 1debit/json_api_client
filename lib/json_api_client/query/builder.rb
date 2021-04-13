@@ -1,3 +1,5 @@
+require 'active_support/all'
+
 module JsonApiClient
   module Query
     class Builder
@@ -5,60 +7,55 @@ module JsonApiClient
       attr_reader :klass
       delegate :key_formatter, to: :klass
 
-      def initialize(klass)
-        @klass = klass
-        @primary_key = nil
-        @pagination_params = {}
-        @path_params = {}
-        @additional_params = {}
-        @filters = {}
-        @includes = []
-        @orders = []
-        @fields = []
+      def initialize(klass, opts = {})
+        @klass             = klass
+        @primary_key       = opts.fetch( :primary_key, nil )
+        @pagination_params = opts.fetch( :pagination_params, {} )
+        @path_params       = opts.fetch( :path_params, {} )
+        @additional_params = opts.fetch( :additional_params, {} )
+        @filters           = opts.fetch( :filters, {} )
+        @includes          = opts.fetch( :includes, [] )
+        @orders            = opts.fetch( :orders, [] )
+        @fields            = opts.fetch( :fields, [] )
       end
 
       def where(conditions = {})
         # pull out any path params here
-        @path_params.merge!(conditions.slice(*klass.prefix_params))
-        @filters.merge!(conditions.except(*klass.prefix_params))
-        self
+        path_conditions = conditions.slice(*klass.prefix_params)
+        unpathed_conditions = conditions.except(*klass.prefix_params)
+
+        _new_scope( path_params: path_conditions, filters: unpathed_conditions )
       end
 
       def order(*args)
-        @orders += parse_orders(*args)
-        self
+        _new_scope( orders: parse_orders(*args) )
       end
 
       def includes(*tables)
-        @includes += parse_related_links(*tables)
-        self
+        _new_scope( includes: parse_related_links(*tables) )
       end
 
       def select(*fields)
-        @fields += parse_fields(*fields)
-        self
+        _new_scope( fields: parse_fields(*fields) )
       end
 
       def paginate(conditions = {})
-        scope = self
+        scope = _new_scope
         scope = scope.page(conditions[:page]) if conditions[:page]
         scope = scope.per(conditions[:per_page]) if conditions[:per_page]
         scope
       end
 
       def page(number)
-        @pagination_params[ klass.paginator.page_param ] = number
-        self
+        _new_scope( pagination_params: { klass.paginator.page_param => number || 1 } )
       end
 
       def per(size)
-        @pagination_params[ klass.paginator.per_page_param ] = size
-        self
+        _new_scope( pagination_params: { klass.paginator.per_page_param => size } )
       end
 
       def with_params(more_params)
-        @additional_params.merge!(more_params)
-        self
+        _new_scope( additional_params: more_params )
       end
 
       def first
@@ -69,8 +66,12 @@ module JsonApiClient
         paginate(page: 1, per_page: 1).pages.last.to_a.last
       end
 
-      def build
-        klass.new(params)
+      def build(attrs = {})
+        klass.new @path_params.merge(attrs.symbolize_keys)
+      end
+
+      def create(attrs = {})
+        klass.create @path_params.merge(attrs.symbolize_keys)
       end
 
       def params
@@ -85,26 +86,62 @@ module JsonApiClient
       end
 
       def to_a
-        @to_a ||= find
+        @to_a ||= _fetch
       end
       alias all to_a
 
       def find(args = {})
-        case args
-        when Hash
-          where(args)
-        else
-          @primary_key = args
+        if klass.raise_on_blank_find_param && args.blank?
+          raise Errors::NotFound, 'blank .find param'
         end
 
-        klass.requestor.get(params)
+        case args
+        when Hash
+          scope = where(args)
+        else
+          scope = _new_scope( primary_key: args )
+        end
+
+        scope._fetch
       end
 
       def method_missing(method_name, *args, &block)
         to_a.send(method_name, *args, &block)
       end
 
+      def hash
+        [
+          klass,
+          params
+        ].hash
+      end
+
+      def ==(other)
+        return false unless other.is_a?(self.class)
+
+        hash == other.hash
+      end
+      alias_method :eql?, :==
+
+      protected
+
+      def _fetch
+        klass.requestor.get(params)
+      end
+
       private
+
+      def _new_scope( opts = {} )
+        self.class.new( @klass,
+             primary_key:       opts.fetch( :primary_key, @primary_key ),
+             pagination_params: @pagination_params.merge( opts.fetch( :pagination_params, {} ) ),
+             path_params:       @path_params.merge( opts.fetch( :path_params, {} ) ),
+             additional_params: @additional_params.merge( opts.fetch( :additional_params, {} ) ),
+             filters:           @filters.merge( opts.fetch( :filters, {} ) ),
+             includes:          @includes + opts.fetch( :includes, [] ),
+             orders:            @orders + opts.fetch( :orders, [] ),
+             fields:            @fields + opts.fetch( :fields, [] ) )
+      end
 
       def path_params
         @path_params.empty? ? {} : {path: @path_params}
@@ -123,7 +160,13 @@ module JsonApiClient
       end
 
       def pagination_params
-        @pagination_params.empty? ? {} : {page: @pagination_params}
+        if klass.paginator.ancestors.include?(Paginating::Paginator)
+          # Original Paginator inconsistently wraps pagination params here. Keeping
+          # default behavior for now so as not to break backward compatibility.
+          @pagination_params.empty? ? {} : {page: @pagination_params}
+        else
+          @pagination_params
+        end
       end
 
       def includes_params
@@ -159,22 +202,7 @@ module JsonApiClient
       end
 
       def parse_related_links(*tables)
-        tables.map do |table|
-          case table
-          when Hash
-            table.map do |k, v|
-              parse_related_links(*v).map do |sub|
-                "#{k}.#{sub}"
-              end
-            end
-          when Array
-            table.map do |v|
-              parse_related_links(*v)
-            end
-          else
-            key_formatter.format(table)
-          end
-        end.flatten
+        Utils.parse_includes(klass, *tables)
       end
 
       def parse_orders(*args)

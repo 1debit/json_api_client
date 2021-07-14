@@ -28,8 +28,12 @@ module JsonApiClient
           raise Errors::NotFound, env[:url]
         when 409
           raise Errors::Conflict, env
+        when 429
+          raise Errors::ApiError, env
         when 400..499
           # some other error
+          # TODO: raise Errors::ApiError, env
+          # https://github.com/JsonApiClient/json_api_client/blame/master/lib/json_api_client/middleware/status.rb#L46
         when 500..599
           raise Errors::ServerError, env
         else
